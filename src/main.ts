@@ -28,6 +28,7 @@ async function getAndReply(
   if (isNaN(parsed))
     return ctx.reply("Invalid Input. The input must be a number.");
 
+  let isEdited = false;
   const reply = ctx.reply("Fetching Manga...");
 
   try {
@@ -48,6 +49,7 @@ async function getAndReply(
     extraInfo.forEach((v) => info.push(join([bold(v[0]), v[1]])));
 
     const finishedReply = await reply;
+    isEdited = true;
     if (manga.cover) {
       await ctx.telegram.editMessageMedia(
         finishedReply.chat.id,
@@ -61,6 +63,7 @@ async function getAndReply(
       );
       await ctx.reply(join(interleave(info, "\n")));
     } else {
+      isEdited = true;
       await ctx.telegram.editMessageText(
         finishedReply.chat.id,
         finishedReply.message_id,
@@ -82,13 +85,17 @@ async function getAndReply(
 
     ctx.reply("Done.");
   } catch {
-    const finishedReply = await reply;
-    ctx.telegram.editMessageText(
-      finishedReply.chat.id,
-      finishedReply.message_id,
-      undefined,
-      "Failed to Fetch Manga."
-    );
+    if (isEdited) {
+      ctx.reply("Failed to Send the Manga.");
+    } else {
+      const finishedReply = await reply;
+      ctx.telegram.editMessageText(
+        finishedReply.chat.id,
+        finishedReply.message_id,
+        undefined,
+        "Failed to Fetch Manga."
+      );
+    }
   }
 }
 

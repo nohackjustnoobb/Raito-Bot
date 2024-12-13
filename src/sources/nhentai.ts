@@ -1,13 +1,8 @@
-import {
-  bold,
-  FmtString,
-  join,
-  underline,
-} from 'telegraf/format';
+import { bold, FmtString, join, underline } from "telegraf/format";
 
-import { DOMParser } from '@b-fuze/deno-dom';
+import { DOMParser } from "@b-fuze/deno-dom";
 
-import Manga from '../models/manga.ts';
+import Manga from "../models/manga.ts";
 
 const BASE_URL = "https://nhentai.net";
 
@@ -79,10 +74,7 @@ async function get(id: string) {
     .getElementById("thumbnail-container")
     ?.getElementsByTagName("img")
     .map((e) =>
-      e
-        .getAttribute("data-src")
-        ?.replace(/\/\/t/, "//i")
-        ?.replace(/t\.jpg/, ".jpg")
+      e.getAttribute("data-src")?.replace(/\/\/t/, "//i")?.replace(/t\./, ".")
     )
     .filter((e) => e) as string[] | null;
   if (urls) manga.urls = urls;

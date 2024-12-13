@@ -1,0 +1,9 @@
+{
+  "tasks": {
+    "dev": "deno run --env-file --allow-net --allow-read --allow-env --watch src/main.ts"
+  },
+  "imports": {
+    "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@^0.1.48",
+    "telegraf": "npm:telegraf@^4.16.3"
+  }
+}

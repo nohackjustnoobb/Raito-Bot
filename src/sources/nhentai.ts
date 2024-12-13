@@ -9,10 +9,12 @@ import { DOMParser } from '@b-fuze/deno-dom';
 
 import Manga from '../models/manga.ts';
 
-const BASE_URL = "https://nhentai.net/g/";
+const BASE_URL = "https://nhentai.net";
 
 async function get(id: string) {
-  const resp = await fetch(`${BASE_URL}${id}`);
+  const resp = await fetch(`${BASE_URL}/g/${id}`);
+  if (!resp.ok) throw new Error("Failed to Fetch Manga.");
+
   const doc = new DOMParser().parseFromString(await resp.text(), "text/html");
 
   const manga = new Manga();

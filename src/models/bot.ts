@@ -6,8 +6,7 @@ function log(mesg: string) {
 
 class Bot {
   bot: Telegraf;
-  helpText?: string;
-  cmds: string[] = ["start", "help"];
+  cmds: Array<{ command: string; description: string }> = [];
 
   constructor() {
     const token = Deno.env.get("BOT_TOKEN");
@@ -24,7 +23,11 @@ class Bot {
       );
       const now = Date.now();
 
-      if (this.cmds.find((v) => v === command)) {
+      if (
+        ["start", "help", ...this.cmds.map((v) => v.command)].find(
+          (v) => v === command
+        )
+      ) {
         await next();
       } else {
         ctx.reply("Unknown Command.");
@@ -38,30 +41,42 @@ class Bot {
     });
 
     const replyHelpTextIfExists = (ctx: { reply: (arg0: string) => void }) => {
-      if (this.helpText) ctx.reply(this.helpText);
+      ctx.reply(
+        [
+          "Available commands:",
+          ...this.cmds.map((v) => `/${v.command} - ${v.description}`),
+        ].join("\n")
+      );
     };
     this.bot.start(replyHelpTextIfExists);
     this.bot.help(replyHelpTextIfExists);
   }
 
-  setHelpText(text: string) {
-    this.helpText = text;
-  }
-
   register(
     cmds: string | Array<string>,
+    description: string,
     fn: Parameters<typeof this.bot.command>[1]
   ) {
-    for (const cmd of cmds instanceof Array ? cmds : [cmds]) {
-      log(`\u001b[34mRegistering Command \u001b[36m${cmd}`);
+    const commands = cmds instanceof Array ? cmds : [cmds];
+    for (let i = 0; i < commands.length; i++) {
+      const cmd = commands[i];
+      if (i == 0) log(`\u001b[34mRegistering Command \u001b[36m${cmd}`);
+      else
+        log(
+          `\u001b[34mRegistering Alias \u001b[36m${cmd} \u001b[34m-> \u001b[36m${commands[0]}`
+        );
 
-      this.cmds.push(cmd);
+      this.cmds.push({
+        command: cmd,
+        description: i == 0 ? description : `alias of /${commands[0]}`,
+      });
       this.bot.command(cmd, fn);
     }
   }
 
-  start() {
+  async start() {
     const domain = Deno.env.get("DOMAIN");
+    await this.bot.telegram.setMyCommands(this.cmds);
 
     if (domain) {
       log("\u001b[34mBot Listening on Port \u001b[36m8080\u001b[34m...");

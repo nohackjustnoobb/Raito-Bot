@@ -117,7 +117,7 @@ class Bot {
         },
         ...(cmd.aliases || []).map((v) => ({
           command: v,
-          description: `/${v} - alias of /${cmd.name}`,
+          description: `alias of /${cmd.name}`,
         }))
       );
     }

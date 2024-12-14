@@ -8,7 +8,7 @@ import wGet from "./sources/wnacg.ts";
 import { chunkArray, interleave, sleep } from "./utils.ts";
 
 const CHUNK_SIZE = 10;
-const TIMEOUT = 1250;
+const TIMEOUT = 1500;
 
 const bot = new Bot();
 
@@ -43,7 +43,7 @@ function getWrapper(
       if (manga.title.jp) info.push(manga.title.jp);
 
       const extraInfo = [];
-      if (!manga.artists.length)
+      if (manga.artists.length)
         extraInfo.push(["Artists: ", manga.artists.join(", ")]);
       if (manga.language) extraInfo.push(["Language: ", manga.language]);
       extraInfo.push(["Pages: ", manga.urls.length]);

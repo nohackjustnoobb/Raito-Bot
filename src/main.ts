@@ -1,11 +1,18 @@
-import { Context } from "telegraf";
-import { bold, join } from "telegraf/format";
+import { Context } from 'telegraf';
+import {
+  bold,
+  join,
+} from 'telegraf/format';
 
-import Bot from "./models/bot.ts";
-import Manga from "./models/manga.ts";
-import nGet from "./sources/nhentai.ts";
-import wGet from "./sources/wnacg.ts";
-import { chunkArray, interleave, sleep } from "./utils.ts";
+import Bot from './models/bot.ts';
+import Manga from './models/manga.ts';
+import nGet from './sources/nhentai.ts';
+import wGet from './sources/wnacg.ts';
+import {
+  chunkArray,
+  interleave,
+  sleep,
+} from './utils.ts';
 
 const CHUNK_SIZE = 10;
 const TIMEOUT = 1500;

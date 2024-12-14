@@ -1,6 +1,6 @@
-import { DOMParser } from "@b-fuze/deno-dom";
+import { DOMParser } from '@b-fuze/deno-dom';
 
-import Manga from "../models/manga.ts";
+import Manga from '../models/manga.ts';
 
 const BASE_URL = "https://wnacg.com";
 

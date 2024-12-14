@@ -18,4 +18,8 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export { chunkArray, getArgs, interleave, sleep };
+function log(mesg: string) {
+  console.log(`%c${new Date().toISOString()}`, "color: gray", mesg);
+}
+
+export { chunkArray, getArgs, interleave, log, sleep };

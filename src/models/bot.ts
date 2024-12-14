@@ -1,18 +1,25 @@
-import { Telegraf } from 'telegraf';
+import { Context, Telegraf } from "telegraf";
 
-function log(mesg: string) {
-  console.log(`%c${new Date().toISOString()}`, "color: gray", mesg);
+import { getArgs, log } from "../utils.ts";
+
+interface Command {
+  name: string;
+  aliases?: Array<string>;
+  description: string;
+  inputDescription: string;
+  handler: (ctx: Context, mesg: string) => Promise<void> | void;
 }
 
 class Bot {
-  bot: Telegraf;
-  cmds: Array<{ command: string; description: string }> = [];
+  bot: Telegraf<Context>;
+  cmds: Array<Command> = [];
+  currentCommand: { [chatId: string]: string } = {};
 
   constructor() {
     const token = Deno.env.get("BOT_TOKEN");
     if (!token) throw Error("No token found.");
 
-    this.bot = new Telegraf(token, { handlerTimeout: 300000 });
+    this.bot = new Telegraf<Context>(token, { handlerTimeout: 300000 });
 
     this.bot.use(async (ctx, next) => {
       const match = ctx.text?.match(/\/([^ ]*)/);
@@ -23,14 +30,43 @@ class Bot {
       );
       const now = Date.now();
 
-      if (
-        ["start", "help", ...this.cmds.map((v) => v.command)].find(
-          (v) => v === command
-        )
-      ) {
-        await next();
+      if (command === "NONE" && this.currentCommand[ctx.chat!.id]) {
+        const cmd = this.cmds.find(
+          (v) => v.name === this.currentCommand[ctx.chat!.id]
+        )!;
+        await cmd.handler(ctx, ctx.text!);
+        delete this.currentCommand[ctx.chat!.id];
+      } else if (command !== "NONE") {
+        const buildinCommand = ["start", "help"].find((v) => v === command);
+        const cmd = this.cmds.find(
+          (v) => v.name === command || v.aliases?.find((v2) => v2 == command)
+        );
+
+        if (!buildinCommand && !cmd && command !== "cancel") {
+          ctx.reply(
+            "Invalid Command. Please check /help for available commands."
+          );
+        } else {
+          if (buildinCommand) next();
+
+          if (command === "cancel") {
+            delete this.currentCommand[ctx.chat!.id];
+            await ctx.reply("Command cancelled.");
+          }
+
+          if (cmd) {
+            const mesg = getArgs(ctx.text!);
+
+            if (mesg == "") {
+              this.currentCommand[ctx.chat!.id] = cmd.name;
+              await ctx.reply(cmd.inputDescription);
+            } else {
+              await cmd.handler(ctx, mesg);
+            }
+          }
+        }
       } else {
-        ctx.reply("Unknown Command.");
+        ctx.reply("Invalid Input. Please check /help for available commands.");
       }
 
       log(
@@ -41,42 +77,56 @@ class Bot {
     });
 
     const replyHelpTextIfExists = (ctx: { reply: (arg0: string) => void }) => {
-      ctx.reply(
-        [
-          "Available commands:",
-          ...this.cmds.map((v) => `/${v.command} - ${v.description}`),
-        ].join("\n")
-      );
+      const mesgs = ["Available commands:\n"];
+
+      for (const cmd of this.cmds) {
+        mesgs.push(
+          `/${cmd.name} - ${cmd.description}`,
+          ...(cmd.aliases || []).map((v) => `/${v} - alias of /${cmd.name}`)
+        );
+        mesgs.push(mesgs.pop() + "\n");
+      }
+
+      mesgs.push("/cancel - cancel current command");
+
+      ctx.reply(mesgs.join("\n"));
     };
     this.bot.start(replyHelpTextIfExists);
     this.bot.help(replyHelpTextIfExists);
   }
 
-  register(
-    cmds: string | Array<string>,
-    description: string,
-    fn: Parameters<typeof this.bot.command>[1]
-  ) {
-    const commands = cmds instanceof Array ? cmds : [cmds];
-    for (let i = 0; i < commands.length; i++) {
-      const cmd = commands[i];
-      if (i == 0) log(`\u001b[34mRegistering Command \u001b[36m${cmd}`);
-      else
-        log(
-          `\u001b[34mRegistering Alias \u001b[36m${cmd} \u001b[34m-> \u001b[36m${commands[0]}`
-        );
+  register(cmd: Command) {
+    this.cmds.push(cmd);
 
-      this.cmds.push({
-        command: cmd,
-        description: i == 0 ? description : `alias of /${commands[0]}`,
-      });
-      this.bot.command(cmd, fn);
-    }
+    log(`\u001b[34mRegistering Command \u001b[36m${cmd.name}`);
+
+    for (const alias of cmd.aliases || [])
+      log(
+        `\u001b[34mRegistering Alias \u001b[36m${alias} \u001b[34m-> \u001b[36m${cmd.name}`
+      );
   }
 
   async start() {
     const domain = Deno.env.get("DOMAIN");
-    await this.bot.telegram.setMyCommands(this.cmds);
+    const convertedCmds = [];
+    for (const cmd of this.cmds) {
+      convertedCmds.push(
+        {
+          command: cmd.name,
+          description: cmd.description,
+        },
+        ...(cmd.aliases || []).map((v) => ({
+          command: v,
+          description: `/${v} - alias of /${cmd.name}`,
+        }))
+      );
+    }
+    convertedCmds.push({
+      command: "cancel",
+      description: "cancel current command",
+    });
+
+    await this.bot.telegram.setMyCommands(convertedCmds);
 
     if (domain) {
       log("\u001b[34mBot Listening on Port \u001b[36m8080\u001b[34m...");

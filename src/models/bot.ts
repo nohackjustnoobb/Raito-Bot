@@ -19,7 +19,20 @@ class Bot {
     const token = Deno.env.get("BOT_TOKEN");
     if (!token) throw Error("No token found.");
 
-    this.bot = new Telegraf<Context>(token, { handlerTimeout: 300000 });
+    this.bot = new Telegraf<Context>(token, { handlerTimeout: 1_000_000 });
+
+    const timerWrapper = async (
+      now: number,
+      chatId: number,
+      func: () => Promise<void> | void
+    ) => {
+      await func();
+      log(
+        `\u001b[32mProcessed \u001b[36mchat=\u001b[37m${chatId} \u001b[36mduration=\u001b[37m${
+          Date.now() - now
+        }ms`
+      );
+    };
 
     this.bot.use(async (ctx, next) => {
       const match = ctx.text?.match(/\/([^ ]*)/);
@@ -34,7 +47,8 @@ class Bot {
         const cmd = this.cmds.find(
           (v) => v.name === this.currentCommand[ctx.chat!.id]
         )!;
-        await cmd.handler(ctx, ctx.text!);
+
+        timerWrapper(now, ctx.chat!.id, () => cmd.handler(ctx, ctx.text!));
         delete this.currentCommand[ctx.chat!.id];
       } else if (command !== "NONE") {
         const buildinCommand = ["start", "help"].find((v) => v === command);
@@ -43,15 +57,20 @@ class Bot {
         );
 
         if (!buildinCommand && !cmd && command !== "cancel") {
-          ctx.reply(
-            "Invalid Command. Please check /help for available commands."
-          );
+          timerWrapper(now, ctx.chat!.id, async () => {
+            await ctx.reply(
+              "Invalid Command. Please check /help for available commands."
+            );
+          });
         } else {
-          if (buildinCommand) next();
+          delete this.currentCommand[ctx.chat!.id];
+
+          if (buildinCommand) timerWrapper(now, ctx.chat!.id, next);
 
           if (command === "cancel") {
-            delete this.currentCommand[ctx.chat!.id];
-            await ctx.reply("Command cancelled.");
+            timerWrapper(now, ctx.chat!.id, async () => {
+              await ctx.reply("Command cancelled.");
+            });
           }
 
           if (cmd) {
@@ -61,19 +80,17 @@ class Bot {
               this.currentCommand[ctx.chat!.id] = cmd.name;
               await ctx.reply(cmd.inputDescription);
             } else {
-              await cmd.handler(ctx, mesg);
+              timerWrapper(now, ctx.chat!.id, () => cmd.handler(ctx, mesg));
             }
           }
         }
       } else {
-        ctx.reply("Invalid Input. Please check /help for available commands.");
+        timerWrapper(now, ctx.chat!.id, async () => {
+          await ctx.reply(
+            "Invalid Input. Please check /help for available commands."
+          );
+        });
       }
-
-      log(
-        `\u001b[32mProcessed \u001b[36mchat=\u001b[37m${
-          ctx.chat?.id
-        } \u001b[36mduration=\u001b[37m${Date.now() - now}ms`
-      );
     });
 
     const replyHelpTextIfExists = (ctx: { reply: (arg0: string) => void }) => {

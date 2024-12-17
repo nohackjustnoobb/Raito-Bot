@@ -1,6 +1,6 @@
 # Raito Bot
 
-TODO
+A telegram bot.
 
 ## Quick Start
 

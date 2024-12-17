@@ -1,21 +1,14 @@
-import { Context } from 'telegraf';
-import {
-  bold,
-  join,
-} from 'telegraf/format';
+import { Context, TelegramError } from "telegraf";
+import { bold, join } from "telegraf/format";
 
-import Bot from './models/bot.ts';
-import Manga from './models/manga.ts';
-import nGet from './sources/nhentai.ts';
-import wGet from './sources/wnacg.ts';
-import {
-  chunkArray,
-  interleave,
-  sleep,
-} from './utils.ts';
+import Bot from "./models/bot.ts";
+import Manga from "./models/manga.ts";
+import nGet from "./sources/nhentai.ts";
+import wGet from "./sources/wnacg.ts";
+import { chunkArray, interleave, sleep } from "./utils.ts";
 
 const CHUNK_SIZE = 10;
-const TIMEOUT = 1500;
+const TIMEOUT = 1000;
 
 const bot = new Bot();
 
@@ -23,8 +16,8 @@ bot.register({
   name: "echo",
   description: "echo the given message (for testing only)",
   inputDescription: "Please enter a message to echo.",
-  handler: (ctx, mesg) => {
-    ctx.reply(mesg || "Invalid Input. The input cannot be empty.");
+  handler: async (ctx, mesg) => {
+    await ctx.reply(mesg || "Invalid Input. The input cannot be empty.");
   },
 });
 
@@ -35,7 +28,7 @@ function getWrapper(
     const parsed = parseInt(mesg);
 
     if (isNaN(parsed)) {
-      ctx.reply("Invalid Input. The input must be a number.");
+      await ctx.reply("Invalid Input. The input must be a number.");
       return;
     }
     let isEdited = false;
@@ -84,13 +77,27 @@ function getWrapper(
 
       for (const urls of chunkArray(manga.urls, CHUNK_SIZE)) {
         await sleep(TIMEOUT);
-        await ctx.replyWithMediaGroup(
-          urls.map((v) => ({
-            type: "photo",
-            media: v,
-            has_spoiler: true,
-          }))
-        );
+        try {
+          await ctx.replyWithMediaGroup(
+            urls.map((v) => ({
+              type: "photo",
+              media: v,
+              has_spoiler: true,
+            })),
+            { disable_notification: true }
+          );
+        } catch (err) {
+          if (!(err instanceof TelegramError)) throw err;
+
+          const match = err.response.description.match(
+            /Too Many Requests: retry after (\d*)/
+          );
+
+          if (err.response.error_code == 429 && match) {
+            console.log("waiting for ", match[1], "s");
+            await sleep(parseInt(match[1]) * 1000);
+          }
+        }
       }
 
       await sleep(TIMEOUT);

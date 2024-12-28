@@ -35,12 +35,13 @@ function getWrapper(
   get: (id: string) => Promise<Manga>
 ): (ctx: Context, mesg: string) => Promise<void> {
   return async function (ctx: Context, mesg: string) {
-    const parsed = parseInt(mesg);
+    const match = mesg.match(/(\d*)/);
 
-    if (isNaN(parsed)) {
-      await ctx.reply("Invalid Input. The input must be a number.");
+    if (!match) {
+      await ctx.reply("Invali Input. The input must be a number.");
       return;
     }
+
     let isEdited = false;
     const reply = ctx.reply("Fetching Manga...");
 

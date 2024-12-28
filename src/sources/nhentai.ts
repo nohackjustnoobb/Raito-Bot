@@ -51,9 +51,7 @@ async function get(id: string) {
     const text = elem.textContent.trim();
 
     // Tags
-    if (
-      text.startsWith("Tags")
-    ) {
+    if (text.startsWith("Tags")) {
       manga.tags.push(
         ...elem.getElementsByClassName("name").map((e) => e.innerText)
       );
@@ -72,11 +70,11 @@ async function get(id: string) {
     }
 
     if (text.startsWith("Categories")) {
-      manga.type = elem.getElementsByClassName("name")[0].innerText
+      manga.type = elem.getElementsByClassName("name")[0]?.innerText
     }
 
     if (text.startsWith("Parodies")) {
-      manga.parodies = elem.getElementsByClassName("name")[0].innerText;
+      manga.parodies = elem.getElementsByClassName("name")[0]?.innerText;
     }
   }
 

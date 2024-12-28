@@ -1,11 +1,21 @@
-import { Context, TelegramError } from "telegraf";
-import { bold, join } from "telegraf/format";
+import {
+  Context,
+  TelegramError,
+} from 'telegraf';
+import {
+  bold,
+  join,
+} from 'telegraf/format';
 
-import Bot from "./models/bot.ts";
-import Manga from "./models/manga.ts";
-import nGet from "./sources/nhentai.ts";
-import wGet from "./sources/wnacg.ts";
-import { chunkArray, interleave, sleep } from "./utils.ts";
+import Bot from './models/bot.ts';
+import Manga from './models/manga.ts';
+import nGet from './sources/nhentai.ts';
+import wGet from './sources/wnacg.ts';
+import {
+  chunkArray,
+  interleave,
+  sleep,
+} from './utils.ts';
 
 const CHUNK_SIZE = 10;
 const TIMEOUT = 1000;
@@ -43,10 +53,18 @@ function getWrapper(
       if (manga.title.jp) info.push(manga.title.jp);
 
       const extraInfo = [];
+
       if (manga.artists.length)
         extraInfo.push(["Artists: ", manga.artists.join(", ")]);
+
       if (manga.language) extraInfo.push(["Language: ", manga.language]);
+
+      if (manga.type) extraInfo.push(["Type: ", manga.type]);
+
+      if (manga.parodies) extraInfo.push(["Parodies: ", manga.parodies]);
+
       extraInfo.push(["Pages: ", manga.urls.length]);
+
       if (manga.tags.length) extraInfo.push(["Tags: ", manga.tags.join(", ")]);
 
       extraInfo.forEach((v) => info.push(join([bold(v[0]), v[1]])));

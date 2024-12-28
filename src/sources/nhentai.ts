@@ -52,9 +52,7 @@ async function get(id: string) {
 
     // Tags
     if (
-      text.startsWith("Parodies") ||
-      text.startsWith("Tags") ||
-      text.startsWith("Categories")
+      text.startsWith("Tags")
     ) {
       manga.tags.push(
         ...elem.getElementsByClassName("name").map((e) => e.innerText)
@@ -72,6 +70,14 @@ async function get(id: string) {
     if (text.startsWith("Language")) {
       manga.language = elem.getElementsByClassName("name").at(-1)?.innerText;
     }
+
+    if (text.startsWith("Categories")) {
+      manga.type = elem.getElementsByClassName("name")[0].innerText
+    }
+
+    if (text.startsWith("Parodies")) {
+      manga.parodies = elem.getElementsByClassName("name")[0].innerText;
+    }
   }
 
   // urls
@@ -85,9 +91,8 @@ async function get(id: string) {
       const match = src.match(/.*t(\d).*\/(\d*)\/(\d*)t\.([a-zA-Z]*)/);
       if (!match || match!.length !== 5) return null;
 
-      return `https://i${match![1]}.${BASE_URL}/galleries/${match![2]}/${
-        match![3]
-      }.${match![4]}`;
+      return `https://i${match![1]}.${BASE_URL}/galleries/${match![2]}/${match![3]
+        }.${match![4]}`;
     })
     .filter((e) => e) as string[] | null;
   if (urls) manga.urls = urls;

@@ -17,8 +17,18 @@ async function get(id: string) {
 
   const tags = doc.getElementsByClassName("tagshow").map((v) => v.textContent);
 
-  manga.artists.push(tags.pop()!);
+  manga.artists.push(tags.shift()!);
   manga.tags = tags;
+
+  const typeAndLang = doc.querySelector("div.uwconn label");
+  if (typeAndLang) {
+    const match = typeAndLang.textContent.match(/分類：(.*)／(.*)/)
+    if (match) {
+      manga.type = match[1];
+      manga.language = match[2];
+    }
+  }
+
   manga.cover = info
     .getElementsByTagName("img")[0]
     .getAttribute("src")

@@ -6,6 +6,8 @@ class Manga {
   artists: Array<string>;
   tags: Array<string>;
   urls: Array<string>;
+  type?: string;
+  parodies?: string;
   language?: string;
 
   constructor(
@@ -14,7 +16,9 @@ class Manga {
     artists: Array<string> = [],
     tags: Array<string> = [],
     language?: string,
-    urls: Array<string> = []
+    urls: Array<string> = [],
+    type?: string,
+    parodies?: string
   ) {
     this.title = title;
     this.cover = cover;
@@ -22,6 +26,8 @@ class Manga {
     this.tags = tags;
     this.language = language;
     this.urls = urls;
+    this.type = type;
+    this.parodies = parodies
   }
 }
 

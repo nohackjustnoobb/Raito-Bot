@@ -35,7 +35,7 @@ function getWrapper(
   get: (id: string) => Promise<Manga>
 ): (ctx: Context, mesg: string) => Promise<void> {
   return async function (ctx: Context, mesg: string) {
-    const match = mesg.match(/(\d*)/);
+    const match = mesg.match(/(\d\d*)/);
 
     if (!match) {
       await ctx.reply("Invali Input. The input must be a number.");

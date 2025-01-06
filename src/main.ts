@@ -46,7 +46,7 @@ function getWrapper(
     const reply = ctx.reply("Fetching Manga...");
 
     try {
-      const manga = await get(mesg);
+      const manga = await get(match[1]);
 
       const info = [];
 

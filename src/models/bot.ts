@@ -1,10 +1,17 @@
-import { Context, Telegraf } from "telegraf";
+import {
+  Context,
+  Telegraf,
+} from 'telegraf';
 
-import { getArgs, log } from "../utils.ts";
+import {
+  getArgs,
+  log,
+} from '../utils.ts';
 
 interface Command {
   name: string;
   aliases?: Array<string>;
+  pattern?: Array<RegExp>;
   description: string;
   inputDescription: string;
   handler: (ctx: Context, mesg: string) => Promise<void> | void;
@@ -28,14 +35,13 @@ class Bot {
     ) => {
       await func();
       log(
-        `\u001b[32mProcessed \u001b[36mchat=\u001b[37m${chatId} \u001b[36mduration=\u001b[37m${
-          Date.now() - now
+        `\u001b[32mProcessed \u001b[36mchat=\u001b[37m${chatId} \u001b[36mduration=\u001b[37m${Date.now() - now
         }ms`
       );
     };
 
     this.bot.use(async (ctx, next) => {
-      const match = ctx.text?.match(/\/([^ ]*)/);
+      const match = ctx.text?.match(/^\/([^ ]*)/);
       const command: string = match ? match[1] : "NONE";
 
       log(
@@ -43,14 +49,28 @@ class Bot {
       );
       const now = Date.now();
 
-      if (command === "NONE" && this.currentCommand[ctx.chat!.id]) {
-        const cmd = this.cmds.find(
-          (v) => v.name === this.currentCommand[ctx.chat!.id]
-        )!;
+      if (command === "NONE") {
+        if (this.currentCommand[ctx.chat!.id]) {
+          const cmd = this.cmds.find(
+            (v) => v.name === this.currentCommand[ctx.chat!.id]
+          )!;
 
-        timerWrapper(now, ctx.chat!.id, () => cmd.handler(ctx, ctx.text!));
-        delete this.currentCommand[ctx.chat!.id];
-      } else if (command !== "NONE") {
+          timerWrapper(now, ctx.chat!.id, () => cmd.handler(ctx, ctx.text!));
+          delete this.currentCommand[ctx.chat!.id];
+        } else {
+          const cmd = this.cmds.find(v => v.pattern && v.pattern.find(v2 => ctx.text!.match(v2)))
+
+          if (cmd) {
+            timerWrapper(now, ctx.chat!.id, () => cmd.handler(ctx, ctx.text!));
+          } else {
+            timerWrapper(now, ctx.chat!.id, async () => {
+              await ctx.reply(
+                "Invalid Input. Please check /help for available commands."
+              );
+            });
+          }
+        }
+      } else {
         const buildinCommand = ["start", "help"].find((v) => v === command);
         const cmd = this.cmds.find(
           (v) => v.name === command || v.aliases?.find((v2) => v2 == command)
@@ -84,12 +104,6 @@ class Bot {
             }
           }
         }
-      } else {
-        timerWrapper(now, ctx.chat!.id, async () => {
-          await ctx.reply(
-            "Invalid Input. Please check /help for available commands."
-          );
-        });
       }
     });
 

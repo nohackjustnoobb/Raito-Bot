@@ -142,6 +142,7 @@ bot.register({
   aliases: ["n"],
   description: "get the manga of the given id from nhentai",
   inputDescription: "Please enter the id of the manga.",
+  pattern: [/^https:\/\/nhentai\.net\/g\/.*$/],
   handler: getWrapper(nGet),
 });
 
@@ -150,6 +151,7 @@ bot.register({
   aliases: ["w"],
   description: "get the manga of the given id from wnacg",
   inputDescription: "Please enter the id of the manga.",
+  pattern: [/^https:\/\/www\.wnacg\.com\/.*$/],
   handler: getWrapper(wGet),
 });
 

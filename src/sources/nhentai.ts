@@ -1,19 +1,15 @@
-import {
-  bold,
-  FmtString,
-  join,
-  underline,
-} from 'telegraf/format';
+import { bold, FmtString, join, underline } from "telegraf/format";
 
-import { DOMParser } from '@b-fuze/deno-dom';
+import { DOMParser } from "@b-fuze/deno-dom";
 
-import Manga from '../models/manga.ts';
+import Manga from "../models/manga.ts";
+import getWrapper from "./getWrapper.ts";
 
 const BASE_URL = "nhentai.net";
 
 async function get(id: string) {
   const resp = await fetch(`https://${BASE_URL}/g/${id}`);
-  if (!resp.ok) throw new Error("Failed to Fetch Manga.");
+  if (!resp.ok) throw new Error("Failed to Fetch the Manga.");
 
   const doc = new DOMParser().parseFromString(await resp.text(), "text/html");
 
@@ -70,7 +66,7 @@ async function get(id: string) {
     }
 
     if (text.startsWith("Categories")) {
-      manga.type = elem.getElementsByClassName("name")[0]?.innerText
+      manga.type = elem.getElementsByClassName("name")[0]?.innerText;
     }
 
     if (text.startsWith("Parodies")) {
@@ -89,8 +85,9 @@ async function get(id: string) {
       const match = src.match(/.*t(\d).*\/(\d*)\/(\d*)t\.([a-zA-Z]*)/);
       if (!match || match!.length !== 5) return null;
 
-      return `https://i${match![1]}.${BASE_URL}/galleries/${match![2]}/${match![3]
-        }.${match![4]}`;
+      return `https://i${match![1]}.${BASE_URL}/galleries/${match![2]}/${
+        match![3]
+      }.${match![4]}`;
     })
     .filter((e) => e) as string[] | null;
   if (urls) manga.urls = urls;
@@ -98,4 +95,5 @@ async function get(id: string) {
   return manga;
 }
 
-export default get;
+export default getWrapper(get);
+export { get };

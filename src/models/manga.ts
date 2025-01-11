@@ -1,4 +1,4 @@
-import { FmtString } from 'telegraf/format';
+import { FmtString } from "telegraf/format";
 
 class Manga {
   title: { en?: string | FmtString; jp?: string | FmtString };
@@ -27,7 +27,7 @@ class Manga {
     this.language = language;
     this.urls = urls;
     this.type = type;
-    this.parodies = parodies
+    this.parodies = parodies;
   }
 }
 

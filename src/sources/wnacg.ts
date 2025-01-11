@@ -1,6 +1,7 @@
-import { DOMParser } from '@b-fuze/deno-dom';
+import { DOMParser } from "@b-fuze/deno-dom";
 
-import Manga from '../models/manga.ts';
+import Manga from "../models/manga.ts";
+import getWrapper from "./getWrapper.ts";
 
 const BASE_URL = "https://wnacg.com";
 
@@ -22,7 +23,7 @@ async function get(id: string) {
 
   const typeAndLang = doc.querySelector("div.uwconn label");
   if (typeAndLang) {
-    const match = typeAndLang.textContent.match(/分類：(.*)／(.*)/)
+    const match = typeAndLang.textContent.match(/分類：(.*)／(.*)/);
     if (match) {
       manga.type = match[1];
       manga.language = match[2];
@@ -50,4 +51,5 @@ async function get(id: string) {
   return manga;
 }
 
-export default get;
+export default getWrapper(get);
+export { get };

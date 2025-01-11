@@ -1,19 +1,13 @@
-import {
-  Context,
-  Telegraf,
-} from 'telegraf';
+import { Context, Telegraf } from "telegraf";
 
-import {
-  getArgs,
-  log,
-} from '../utils.ts';
+import { getArgs, log } from "../utils/utils.ts";
 
 interface Command {
   name: string;
   aliases?: Array<string>;
   pattern?: Array<RegExp>;
   description: string;
-  inputDescription: string;
+  inputDescription?: string;
   handler: (ctx: Context, mesg: string) => Promise<void> | void;
 }
 
@@ -35,13 +29,18 @@ class Bot {
     ) => {
       await func();
       log(
-        `\u001b[32mProcessed \u001b[36mchat=\u001b[37m${chatId} \u001b[36mduration=\u001b[37m${Date.now() - now
+        `\u001b[32mProcessed \u001b[36mchat=\u001b[37m${chatId} \u001b[36mduration=\u001b[37m${
+          Date.now() - now
         }ms`
       );
     };
 
-    this.bot.use(async (ctx, next) => {
-      const match = ctx.text?.match(/^\/([^ ]*)/);
+    this.bot.use((ctx, next) => {
+      let text = ctx.text;
+      if (ctx.callbackQuery)
+        text = (ctx.callbackQuery as { data: string }).data;
+
+      const match = text?.match(/^\/([^ ]*)/);
       const command: string = match ? match[1] : "NONE";
 
       log(
@@ -55,13 +54,15 @@ class Bot {
             (v) => v.name === this.currentCommand[ctx.chat!.id]
           )!;
 
-          timerWrapper(now, ctx.chat!.id, () => cmd.handler(ctx, ctx.text!));
+          timerWrapper(now, ctx.chat!.id, () => cmd.handler(ctx, text!));
           delete this.currentCommand[ctx.chat!.id];
         } else {
-          const cmd = this.cmds.find(v => v.pattern && v.pattern.find(v2 => ctx.text!.match(v2)))
+          const cmd = this.cmds.find(
+            (v) => v.pattern && v.pattern.find((v2) => text!.match(v2))
+          );
 
           if (cmd) {
-            timerWrapper(now, ctx.chat!.id, () => cmd.handler(ctx, ctx.text!));
+            timerWrapper(now, ctx.chat!.id, () => cmd.handler(ctx, text!));
           } else {
             timerWrapper(now, ctx.chat!.id, async () => {
               await ctx.reply(
@@ -94,11 +95,13 @@ class Bot {
           }
 
           if (cmd) {
-            const mesg = getArgs(ctx.text!);
+            const mesg = getArgs(text!);
 
-            if (mesg == "") {
+            if (mesg == "" && cmd.inputDescription) {
               this.currentCommand[ctx.chat!.id] = cmd.name;
-              await ctx.reply(cmd.inputDescription);
+              timerWrapper(now, ctx.chat!.id, async () => {
+                await ctx.reply(cmd.inputDescription!);
+              });
             } else {
               timerWrapper(now, ctx.chat!.id, () => cmd.handler(ctx, mesg));
             }
@@ -139,19 +142,11 @@ class Bot {
 
   async start() {
     const domain = Deno.env.get("DOMAIN");
-    const convertedCmds = [];
-    for (const cmd of this.cmds) {
-      convertedCmds.push(
-        {
-          command: cmd.name,
-          description: cmd.description,
-        },
-        ...(cmd.aliases || []).map((v) => ({
-          command: v,
-          description: `alias of /${cmd.name}`,
-        }))
-      );
-    }
+
+    const convertedCmds = this.cmds.map((v) => ({
+      command: v.name,
+      description: v.description,
+    }));
     convertedCmds.push({
       command: "cancel",
       description: "cancel current command",

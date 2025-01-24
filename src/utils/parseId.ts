@@ -1,4 +1,4 @@
-import { Context } from "telegraf";
+import { Context } from 'telegraf';
 
 async function parseWITHSUMMER(ctx: Context, link: string) {
   const reply = ctx.reply("Fetching Webpage...");
@@ -99,6 +99,7 @@ async function parseId(ctx: Context, mesg: string) {
     case "www.with-summer.com":
     case "furnishwe.com":
     case "www.open-selfless.com":
+    case "www.co-47.com":
       await parseWITHSUMMER(ctx, link);
       break;
     case "picread.net":

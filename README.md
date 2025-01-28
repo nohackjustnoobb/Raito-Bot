@@ -19,6 +19,7 @@ Inside the project directory, create a .env file with the following content:
 
 ```bash
 BOT_TOKEN=<your-bot-token>
+SOURCE=<your-repo-url> # Optional
 DOMAIN=<your-domain> # Optional
 ```
 

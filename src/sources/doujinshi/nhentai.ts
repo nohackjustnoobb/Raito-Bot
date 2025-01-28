@@ -2,25 +2,27 @@ import { bold, FmtString, join, underline } from "telegraf/format";
 
 import { DOMParser } from "@b-fuze/deno-dom";
 
-import Manga from "../models/manga.ts";
+import Doujinshi from "../../models/doujinshi.ts";
 import getWrapper from "./getWrapper.ts";
 
 const BASE_URL = "nhentai.net";
 
+// TODO bypass cloudflare
+// https://github.com/ZFC-Digital/cf-clearance-scraper
 async function get(id: string) {
   const resp = await fetch(`https://${BASE_URL}/g/${id}`);
-  if (!resp.ok) throw new Error("Failed to Fetch the Manga.");
+  if (!resp.ok) throw new Error("Failed to Fetch the Doujinshi.");
 
   const doc = new DOMParser().parseFromString(await resp.text(), "text/html");
 
-  const manga = new Manga();
+  const doujinshi = new Doujinshi();
 
   // cover
   const cover = doc
     .getElementById("cover")
     ?.getElementsByTagName("img")[0]
     .getAttribute("data-src");
-  manga.cover = cover || undefined;
+  doujinshi.cover = cover || undefined;
 
   // title
   const titles = doc.getElementsByClassName("title");
@@ -37,8 +39,8 @@ async function get(id: string) {
       }
     });
 
-    if (title.tagName == "H1") manga.title.en = join(result);
-    else manga.title.jp = join(result);
+    if (title.tagName == "H1") doujinshi.title.en = join(result);
+    else doujinshi.title.jp = join(result);
   }
 
   // tags & artists & languages
@@ -48,29 +50,31 @@ async function get(id: string) {
 
     // Tags
     if (text.startsWith("Tags")) {
-      manga.tags.push(
+      doujinshi.tags.push(
         ...elem.getElementsByClassName("name").map((e) => e.innerText)
       );
     }
 
     // Artists
     if (text.startsWith("Artists")) {
-      manga.artists.push(
+      doujinshi.artists.push(
         ...elem.getElementsByClassName("name").map((e) => e.innerText)
       );
     }
 
     // Language
     if (text.startsWith("Language")) {
-      manga.language = elem.getElementsByClassName("name").at(-1)?.innerText;
+      doujinshi.language = elem
+        .getElementsByClassName("name")
+        .at(-1)?.innerText;
     }
 
     if (text.startsWith("Categories")) {
-      manga.type = elem.getElementsByClassName("name")[0]?.innerText;
+      doujinshi.type = elem.getElementsByClassName("name")[0]?.innerText;
     }
 
     if (text.startsWith("Parodies")) {
-      manga.parodies = elem.getElementsByClassName("name")[0]?.innerText;
+      doujinshi.parodies = elem.getElementsByClassName("name")[0]?.innerText;
     }
   }
 
@@ -90,9 +94,9 @@ async function get(id: string) {
       }.${match![4]}`;
     })
     .filter((e) => e) as string[] | null;
-  if (urls) manga.urls = urls;
+  if (urls) doujinshi.urls = urls;
 
-  return manga;
+  return doujinshi;
 }
 
 export default getWrapper(get);

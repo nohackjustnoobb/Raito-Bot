@@ -1,42 +1,42 @@
-import { DOMParser } from "@b-fuze/deno-dom";
+import { DOMParser } from '@b-fuze/deno-dom';
 
-import Manga from "../models/manga.ts";
-import getWrapper from "./getWrapper.ts";
+import Doujinshi from '../../models/doujinshi.ts';
+import getWrapper from './getWrapper.ts';
 
 const BASE_URL = "https://wnacg.com";
 
 async function get(id: string) {
   let resp = await fetch(`${BASE_URL}/photos-index-aid-${id}.html`);
-  if (!resp.ok) throw new Error("Failed to Fetch Manga.");
+  if (!resp.ok) throw new Error("Failed to Fetch Doujinshi.");
 
   const doc = new DOMParser().parseFromString(await resp.text(), "text/html");
-  const manga = new Manga();
+  const doujinshi = new Doujinshi();
 
   const info = doc.getElementById("bodywrap")!;
 
-  manga.title = { jp: info.getElementsByTagName("h2")[0].textContent };
+  doujinshi.title = { jp: info.getElementsByTagName("h2")[0].textContent };
 
   const tags = doc.getElementsByClassName("tagshow").map((v) => v.textContent);
 
-  manga.artists.push(tags.shift()!);
-  manga.tags = tags;
+  doujinshi.artists.push(tags.shift()!);
+  doujinshi.tags = tags;
 
   const typeAndLang = doc.querySelector("div.uwconn label");
   if (typeAndLang) {
     const match = typeAndLang.textContent.match(/分類：(.*)／(.*)/);
     if (match) {
-      manga.type = match[1];
-      manga.language = match[2];
+      doujinshi.type = match[1];
+      doujinshi.language = match[2];
     }
   }
 
-  manga.cover = info
+  doujinshi.cover = info
     .getElementsByTagName("img")[0]
     .getAttribute("src")
     ?.replace(/\/\//, "https:");
 
   resp = await fetch(`${BASE_URL}/photos-gallery-aid-${id}.html`);
-  if (!resp.ok) throw new Error("Failed to Fetch Manga.");
+  if (!resp.ok) throw new Error("Failed to Fetch Doujinshi.");
   const text = await resp.text();
 
   const rawUrls = JSON.parse(
@@ -46,9 +46,9 @@ async function get(id: string) {
   const parsedUrls = eval(filteredUrls) as Array<{ url: string }>;
   parsedUrls.pop();
 
-  manga.urls = parsedUrls.map((v) => "https:" + v.url);
+  doujinshi.urls = parsedUrls.map((v) => "https:" + v.url);
 
-  return manga;
+  return doujinshi;
 }
 
 export default getWrapper(get);

@@ -1,7 +1,10 @@
 import packageInfo from '../deno.json' with { type: 'json' };
+import tHandler from './manager/torrentManager.ts';
 import Bot from './models/bot.ts';
-import nHandler from './sources/nhentai.ts';
-import wHandler from './sources/wnacg.ts';
+import nHandler from './sources/doujinshi/nhentai.ts';
+import wHandler from './sources/doujinshi/wnacg.ts';
+import nyHandler from './sources/torrent/nyaa.ts';
+import suHandler from './sources/torrent/sukebei.ts';
 import parseId from './utils/parseId.ts';
 
 const bot = new Bot();
@@ -33,7 +36,7 @@ bot.register({
 bot.register({
   name: "parse",
   aliases: ["p"],
-  description: "try to parse the manga id from the given link",
+  description: "try to parse the doujinshi id from the given link",
   inputDescription: "Please enter a link to parse.",
   handler: parseId,
 });
@@ -41,8 +44,8 @@ bot.register({
 bot.register({
   name: "nhentai",
   aliases: ["n"],
-  description: "get the manga of the given id from nhentai",
-  inputDescription: "Please enter the id of the manga.",
+  description: "get the doujinshi of the given id from nhentai",
+  inputDescription: "Please enter the id of the doujinshi.",
   pattern: [/^https:\/\/nhentai\.net\/g\/.*$/],
   handler: nHandler,
 });
@@ -50,10 +53,39 @@ bot.register({
 bot.register({
   name: "wnacg",
   aliases: ["w"],
-  description: "get the manga of the given id from wnacg",
-  inputDescription: "Please enter the id of the manga.",
+  description: "get the doujinshi of the given id from wnacg",
+  inputDescription: "Please enter the id of the doujinshi.",
   pattern: [/^https:\/\/www\.wnacg\.com\/.*$/],
   handler: wHandler,
 });
+
+bot.register({
+  name:"torrent",
+  aliases: ["t"],
+  description: "add the given torrent to the download list",
+  inputDescription: "Please enter the Magnet link of the torrent.",
+  handler: tHandler,
+})
+
+
+bot.register({
+  name: "nyaa",
+  aliases: ["ny"],
+  description: "get the torrent of the given id from nyaa",
+  inputDescription: "Please enter the id of the torrent.",
+  pattern: [/^https:\/\/nyaa\.si\/.*$/],
+  handler: nyHandler,
+});
+
+
+bot.register({
+  name: "sukebei",
+  aliases: ["su"],
+  description: "get the torrent of the given id from sukebei",
+  inputDescription: "Please enter the id of the torrent.",
+  pattern: [/^https:\/\/sukebei\.nyaa\.si\/.*$/],
+  handler: suHandler,
+});
+
 
 bot.start();

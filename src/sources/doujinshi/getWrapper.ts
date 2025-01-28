@@ -1,14 +1,24 @@
-import { Context, TelegramError } from "telegraf";
-import { bold, join } from "telegraf/format";
+import {
+  Context,
+  TelegramError,
+} from 'telegraf';
+import {
+  bold,
+  join,
+} from 'telegraf/format';
 
-import Manga from "../models/manga.ts";
-import { chunkArray, interleave, sleep } from "../utils/utils.ts";
+import Doujinshi from '../../models/doujinshi.ts';
+import {
+  chunkArray,
+  interleave,
+  sleep,
+} from '../../utils/utils.ts';
 
 const CHUNK_SIZE = 10;
 const TIMEOUT = 1000;
 
 function getWrapper(
-  get: (id: string) => Promise<Manga>
+  get: (id: string) => Promise<Doujinshi>
 ): (ctx: Context, mesg: string) => Promise<void> {
   return async function (ctx: Context, mesg: string) {
     const match = mesg.match(/(\d\d*)/);
@@ -19,49 +29,51 @@ function getWrapper(
     }
 
     let isEdited = false;
-    const reply = ctx.reply("Fetching Manga...");
+    const reply = ctx.reply("Fetching Doujinshi...");
 
     try {
-      const manga = await get(match[1]);
+      const doujinshi = await get(match[1]);
 
       const info = [];
 
-      if (manga.title.en) info.push(manga.title.en);
-      if (manga.title.jp) info.push(manga.title.jp);
+      if (doujinshi.title.en) info.push(doujinshi.title.en);
+      if (doujinshi.title.jp) info.push(doujinshi.title.jp);
 
       const extraInfo = [];
 
-      if (manga.artists.length)
-        extraInfo.push(["Artists: ", manga.artists.join(", ")]);
+      if (doujinshi.artists.length)
+        extraInfo.push(["Artists: ", doujinshi.artists.join(", ")]);
 
-      if (manga.language) extraInfo.push(["Language: ", manga.language]);
+      if (doujinshi.language)
+        extraInfo.push(["Language: ", doujinshi.language]);
 
-      if (manga.type) extraInfo.push(["Type: ", manga.type]);
+      if (doujinshi.type) extraInfo.push(["Type: ", doujinshi.type]);
 
-      if (manga.parodies) extraInfo.push(["Parodies: ", manga.parodies]);
+      if (doujinshi.parodies)
+        extraInfo.push(["Parodies: ", doujinshi.parodies]);
 
-      extraInfo.push(["Pages: ", manga.urls.length]);
+      extraInfo.push(["Pages: ", doujinshi.urls.length]);
 
-      if (manga.tags.length) extraInfo.push(["Tags: ", manga.tags.join(", ")]);
+      if (doujinshi.tags.length)
+        extraInfo.push(["Tags: ", doujinshi.tags.join(", ")]);
 
       extraInfo.forEach((v) => info.push(join([bold(v[0]), v[1]])));
 
       const finishedReply = await reply;
       isEdited = true;
-      if (manga.cover) {
+      if (doujinshi.cover) {
         await ctx.telegram.editMessageMedia(
           finishedReply.chat.id,
           finishedReply.message_id,
           undefined,
           {
             type: "photo",
-            media: manga.cover!,
+            media: doujinshi.cover!,
             has_spoiler: true,
           }
         );
         await ctx.reply(join(interleave(info, "\n")));
       } else {
-        isEdited = true;
         await ctx.telegram.editMessageText(
           finishedReply.chat.id,
           finishedReply.message_id,
@@ -70,7 +82,7 @@ function getWrapper(
         );
       }
 
-      for (const urls of chunkArray(manga.urls, CHUNK_SIZE)) {
+      for (const urls of chunkArray(doujinshi.urls, CHUNK_SIZE)) {
         await sleep(TIMEOUT);
         try {
           await ctx.replyWithMediaGroup(
@@ -99,14 +111,14 @@ function getWrapper(
       await ctx.reply("Done.");
     } catch {
       if (isEdited) {
-        await ctx.reply("Failed to Send the Manga.");
+        await ctx.reply("Failed to send the Doujinshi.");
       } else {
         const finishedReply = await reply;
         await ctx.telegram.editMessageText(
           finishedReply.chat.id,
           finishedReply.message_id,
           undefined,
-          "Failed to Fetch the Manga."
+          "Failed to fetch the Doujinshi."
         );
       }
     }

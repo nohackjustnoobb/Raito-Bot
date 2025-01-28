@@ -9,6 +9,7 @@
     "jsr:@std/fs@0.213.1": "0.213.1",
     "jsr:@std/path@0.213.1": "0.213.1",
     "jsr:@std/path@~0.213.1": "0.213.1",
+    "npm:marked@^15.0.6": "15.0.6",
     "npm:telegraf@^4.16.3": "4.16.3"
   },
   "jsr": {
@@ -82,6 +83,9 @@
     "event-target-shim@5.0.1": {
       "integrity": "sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ=="
     },
+    "marked@15.0.6": {
+      "integrity": "sha512-Y07CUOE+HQXbVDCGl3LXggqJDbXDP2pArc2C1N1RRMN0ONiShoSsIInMd5Gsxupe7fKLpgimTV+HOJ9r7bA+pg=="
+    },
     "mri@1.2.0": {
       "integrity": "sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA=="
     },
@@ -136,6 +140,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@b-fuze/deno-dom@~0.1.48",
+      "npm:marked@^15.0.6",
       "npm:telegraf@^4.16.3"
     ]
   }

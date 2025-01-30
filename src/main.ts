@@ -5,7 +5,7 @@ import nHandler from './sources/doujinshi/nhentai.ts';
 import wHandler from './sources/doujinshi/wnacg.ts';
 import nyHandler from './sources/torrent/nyaa.ts';
 import suHandler from './sources/torrent/sukebei.ts';
-import parseId from './utils/parseId.ts';
+import parseId, { PATTERNS as PARSE_PATTERNS } from './utils/parseId.ts';
 
 const bot = new Bot();
 
@@ -39,6 +39,7 @@ bot.register({
   description: "try to parse the doujinshi id from the given link",
   inputDescription: "Please enter a link to parse.",
   handler: parseId,
+  patterns: PARSE_PATTERNS
 });
 
 bot.register({
@@ -46,7 +47,7 @@ bot.register({
   aliases: ["n"],
   description: "get the doujinshi of the given id from nhentai",
   inputDescription: "Please enter the id of the doujinshi.",
-  pattern: [/^https:\/\/nhentai\.net\/g\/.*$/],
+  patterns: [/https:\/\/nhentai\.net\/g\/.*/],
   handler: nHandler,
 });
 
@@ -55,7 +56,7 @@ bot.register({
   aliases: ["w"],
   description: "get the doujinshi of the given id from wnacg",
   inputDescription: "Please enter the id of the doujinshi.",
-  pattern: [/^https:\/\/www\.wnacg\.com\/.*$/],
+  patterns: [/https:\/\/www\.wnacg\.com\/.*/],
   handler: wHandler,
 });
 
@@ -73,7 +74,7 @@ bot.register({
   aliases: ["ny"],
   description: "get the torrent of the given id from nyaa",
   inputDescription: "Please enter the id of the torrent.",
-  pattern: [/^https:\/\/nyaa\.si\/.*$/],
+  patterns: [/https:\/\/nyaa\.si\/.*/],
   handler: nyHandler,
 });
 
@@ -83,7 +84,7 @@ bot.register({
   aliases: ["su"],
   description: "get the torrent of the given id from sukebei",
   inputDescription: "Please enter the id of the torrent.",
-  pattern: [/^https:\/\/sukebei\.nyaa\.si\/.*$/],
+  patterns: [/https:\/\/sukebei\.nyaa\.si\/.*/],
   handler: suHandler,
 });
 

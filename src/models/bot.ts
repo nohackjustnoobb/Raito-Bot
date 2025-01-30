@@ -17,7 +17,7 @@ const STATE_CLEANUP_DURATION = 300;
 interface Command {
   name: string;
   aliases?: Array<string>;
-  pattern?: Array<RegExp>;
+  patterns?: Array<RegExp>;
   description: string;
   inputDescription?: string;
   handler: (ctx: Context, mesg: string) => Promise<void> | void;
@@ -119,7 +119,7 @@ class Bot {
         this.updateState(chatId);
       } else {
         const cmd = this.cmds.find(
-          (v) => v.pattern && v.pattern.find((v2) => text!.match(v2))
+          (v) => v.patterns && v.patterns.find((v2) => text!.match(v2))
         );
 
         if (cmd) {

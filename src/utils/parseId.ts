@@ -1,5 +1,38 @@
 import { Context } from 'telegraf';
 
+interface Site {
+  sites: Array<string>;
+  handler: (ctx: Context, link: string) => Promise<void> | void;
+}
+
+const SITES: Array<Site> = [
+  {
+    sites: [
+      "www.with-summer.com",
+      "furnishwe.com",
+      "www.open-selfless.com",
+      "www.co-47.com",
+      "www.dailydaily-up.com",
+      "www.ohiotires.com",
+    ],
+    handler: parseWITHSUMMER,
+  },
+  {
+    sites: ["picread.net", "maimai.pro"],
+    handler: parseMAIMAIPRO,
+  },
+];
+
+const PATTERNS = SITES.reduce(
+  (prev, curr) => [
+    ...prev,
+    ...curr.sites.map((v) =>
+      RegExp(`https:\/\/${v.replaceAll(".", "\\.")}\/.*`)
+    ),
+  ],
+  [] as Array<RegExp>
+);
+
 async function parseWITHSUMMER(ctx: Context, link: string) {
   const reply = ctx.reply("Fetching Webpage...");
 
@@ -95,23 +128,21 @@ async function parseId(ctx: Context, mesg: string) {
   }
 
   const link = `${match[1]}://${match[2]}/${match[3]}`;
-  switch (match[2]) {
-    case "www.with-summer.com":
-    case "furnishwe.com":
-    case "www.open-selfless.com":
-    case "www.co-47.com":
-      await parseWITHSUMMER(ctx, link);
+  let found = false;
+  for (const site of SITES) {
+    if (site.sites.includes(match[2])) {
+      site.handler(ctx, link);
+      found = true;
       break;
-    case "picread.net":
-    case "maimai.pro":
-      await parseMAIMAIPRO(ctx, link);
-      break;
-    default:
-      await ctx.reply(
-        "Unsupported Site. Please report this site on the GitHub issue or create a pull request to support it. Check /info for the Github repository."
-      );
-      break;
+    }
+  }
+
+  if (!found) {
+    await ctx.reply(
+      "Unsupported Site. Please report this site on the GitHub issue or create a pull request to support it. Check /info for the Github repository."
+    );
   }
 }
 
 export default parseId;
+export { PATTERNS };

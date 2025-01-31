@@ -38,11 +38,17 @@ function getWrapper(
       if (torrent.fileList.length)
         extraInfo.push([
           "File list: \n",
-          quote(torrent.fileList.map((v) => `- ${v}`).join("\n")),
+          join(
+            interleave<FmtString | string>(
+              torrent.fileList.map((v) => quote(`${v}\n`)),
+              "\n"
+            )
+          ),
         ]);
 
-      if (torrent.description)
-        extraInfo.push(["Description: \n", quote(torrent.description)]);
+      // TODO temporary fix for message too long
+      // if (torrent.description)
+      //   extraInfo.push(["Description: \n", quote(torrent.description)]);
 
       extraInfo.forEach((v) => info.push(join([bold(v[0] as string), v[1]])));
 

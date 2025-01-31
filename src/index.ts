@@ -39,7 +39,7 @@ bot.register({
   description: "try to parse the doujinshi id from the given link",
   inputDescription: "Please enter a link to parse.",
   handler: parseId,
-  patterns: PARSE_PATTERNS
+  patterns: PARSE_PATTERNS,
 });
 
 bot.register({
@@ -61,13 +61,12 @@ bot.register({
 });
 
 bot.register({
-  name:"torrent",
+  name: "torrent",
   aliases: ["t"],
   description: "add the given torrent to the download list",
   inputDescription: "Please enter the Magnet link of the torrent.",
   handler: tHandler,
-})
-
+});
 
 bot.register({
   name: "nyaa",
@@ -78,7 +77,6 @@ bot.register({
   handler: nyHandler,
 });
 
-
 bot.register({
   name: "sukebei",
   aliases: ["su"],
@@ -87,6 +85,5 @@ bot.register({
   patterns: [/https:\/\/sukebei\.nyaa\.si\/.*/],
   handler: suHandler,
 });
-
 
 bot.start();

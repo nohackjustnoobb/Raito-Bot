@@ -1,22 +1,129 @@
 import { Context } from 'telegraf';
+import {
+  bold,
+  FmtString,
+  join,
+  underline,
+} from 'telegraf/format';
+import WebTorrent from 'webtorrent';
 
-// TODO implement
+import Torrent from '../models/torrent.ts';
+import { interleave } from '../utils/utils.ts';
+
+const MAX_DOWNLOAD_TASK = 5;
+
+interface TorrentCallback {
+  onFail: () => void;
+  onAdd: () => void;
+  // deno-lint-ignore no-explicit-any
+  onDone: (torrent: any) => void;
+}
+
 class TorrentManager {
-  chats: { [chatId: string]: { [torrentId: string]: () => void } } = {};
-  client = null;
+  callbacks: { [torrentId: string]: { [chatId: string]: TorrentCallback } } =
+    {};
+  downloadList: { [chatId: string]: Set<string> } = {};
+  client: WebTorrent | null = null;
 
-  async add(chatId: string, link: string, callback: () => void) {
-    if (!this.chats[chatId]) this.chats[chatId] = {};
+  constructor(disabled: boolean = false) {
+    if (disabled) return;
 
-    // const torrent = await this.client!.add({
-    //   filename: link,
-    //   downloadDir: `~/download/torrent/${chatId}`,
-    // });
+    this.client = new WebTorrent({
+      utp: false,
+    });
+  }
 
-    // console.log(torrent);
+  add(chatId: string, link: string, callback: TorrentCallback) {
+    if (!this.downloadList[chatId]) this.downloadList[chatId] = new Set();
+
+    // deno-lint-ignore no-explicit-any
+    const torrent = this.client.torrents.find((v: any) => {
+      const match = link.match(/urn:btih:([^&]*)/);
+      if (!match) return false;
+
+      return v.infoHash == match[1];
+    });
+    if (torrent) {
+      this.callbacks[torrent.magnetURI][chatId] = callback;
+      this.downloadList[chatId].add(torrent.magnetURI);
+      return;
+    }
+
+    try {
+      this.client!.add(
+        link,
+        {
+          path: `./download/`,
+          destroyStoreOnDestroy: true,
+        },
+        // deno-lint-ignore no-explicit-any
+        (torrent: any) => {
+          callback.onAdd();
+
+          this.callbacks[torrent.magnetURI] = {};
+
+          this.callbacks[torrent.magnetURI][chatId] = callback;
+          this.downloadList[chatId].add(torrent.magnetURI);
+
+          torrent.on("done", () => {
+            for (const callback of Object.values(
+              this.callbacks[torrent.magnetURI]
+            ))
+              callback.onDone(torrent);
+          });
+
+          torrent.on("error", () => {
+            Object.values(this.callbacks[torrent.magnetURI]).forEach((v) =>
+              v.onFail()
+            );
+            delete this.callbacks[torrent.magnetURI];
+
+            Object.values(this.downloadList).forEach((v) =>
+              v.delete(torrent.magnetURI)
+            );
+          });
+        }
+      );
+    } catch {
+      callback.onFail();
+    }
+  }
+
+  remove(chatId: string, hash: string) {
+    // deno-lint-ignore no-explicit-any
+    const torrent = this.client.torrents.find((v: any) => v.infoHash === hash);
+    if (!torrent) return;
+    const url = torrent.magnetURI;
+
+    if (this.callbacks[url][chatId]) delete this.callbacks[url][chatId];
+
+    if (Object.keys(this.callbacks[url]).length === 0) {
+      delete this.callbacks[url];
+      this.client.remove(torrent);
+    }
+
+    if (this.downloadList[chatId]) this.downloadList[chatId].delete(url);
+  }
+
+  getList(chatId: string): Array<Torrent> {
+    if (!this.downloadList[chatId]) return [];
+
+    return [...this.downloadList[chatId]].map((v) => {
+      const torrent = this.client.torrents.find(
+        // deno-lint-ignore no-explicit-any
+        (v2: any) => v2.magnetURI === v
+      );
+
+      const result = new Torrent(torrent.name ?? "Loading", torrent.magnetURI);
+      result.progress = torrent.progress;
+      result.hash = torrent.infoHash;
+
+      return result;
+    });
   }
 }
 
+// TODO check if using custon api server
 const torrentManager = new TorrentManager();
 
 interface Entity {
@@ -34,6 +141,15 @@ async function handler(ctx: Context, mesg: string) {
   }
 
   let link = null;
+  const chatId = String(ctx.chat!.id);
+  const torrents = torrentManager.getList(chatId);
+
+  if (torrents.length > MAX_DOWNLOAD_TASK) {
+    await ctx.reply(
+      `Your download list already has ${MAX_DOWNLOAD_TASK} torrents.`
+    );
+    return;
+  }
 
   switch (mesg) {
     case "l":
@@ -41,9 +157,44 @@ async function handler(ctx: Context, mesg: string) {
     case "list":
     case "p":
     case "ps":
-      break;
-    case "c":
-    case "cancel":
+    case "progress":
+      if (torrents.length === 0) {
+        await ctx.reply("Your download list is empty.");
+        break;
+      }
+
+      await ctx.reply(
+        join(
+          interleave<string | FmtString<string>>(
+            [
+              ...torrents.map((v) => {
+                const info: Array<FmtString | string> = [
+                  underline(bold(v.title)),
+                ];
+
+                const extraInfo = [
+                  ["Hash: ", v.hash],
+                  ["Progress: ", `${Math.round(v.progress! * 100)}%`],
+                ];
+
+                extraInfo.forEach((v) =>
+                  info.push(join([bold(v[0] as string), v[1]!]))
+                );
+
+                return join(interleave(info, "\n"));
+              }),
+              join([
+                "\nUse ",
+                underline(bold("/torrent cancel <hash>")),
+                " or ",
+                underline(bold("/t c <hash>")),
+                " to cancel a specific task.",
+              ]),
+            ],
+            "\n"
+          )
+        )
+      );
       break;
     case "d":
     case "download":
@@ -64,14 +215,42 @@ async function handler(ctx: Context, mesg: string) {
         );
       }
       break;
+    // deno-lint-ignore no-case-declarations
     default:
+      const matches = mesg.match(/(cancel|c) (.*)/);
+      if (matches) {
+        const hash = matches[2];
+        torrentManager.remove(chatId, hash);
+
+        await ctx.reply(
+          join(["Removed ", underline(bold(hash)), " from the download list."])
+        );
+        break;
+      }
+
       link = mesg;
       break;
   }
 
   if (!link) return;
 
-  await torrentManager.add(String(ctx.chat!.id), link, () => {});
+  torrentManager.add(chatId, link, {
+    onFail: () => {},
+    onAdd: async () =>
+      await ctx.reply(
+        join([
+          "Added to download list. Use ",
+          underline(bold("/torrent list")),
+          " or ",
+          underline(bold("/t l")),
+          " to view the download list.",
+        ])
+      ),
+    // TODO when done
+    onDone: (torrent) => {
+      console.log(torrent);
+    },
+  });
 }
 
 export default handler;

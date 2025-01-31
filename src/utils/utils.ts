@@ -1,5 +1,5 @@
 function getArgs(command: string) {
-  const matches = command.match(/\/(.*) (.*)/i);
+  const matches = command.match(/\/([^ ]*) (.*)/i);
   return matches ? matches[2] : "";
 }
 function interleave<T>(arr: Array<T>, thing: T) {

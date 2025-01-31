@@ -74,12 +74,21 @@ class Bot {
     chatId: number,
     func: () => Promise<void> | void
   ) {
-    await func();
-    log(
-      `\u001b[32mProcessed \u001b[36mchat=\u001b[37m${chatId} \u001b[36mduration=\u001b[37m${
-        Date.now() - now
-      }ms`
-    );
+    try {
+      await func();
+
+      log(
+        `\u001b[32mProcessed \u001b[36mchat=\u001b[37m${chatId} \u001b[36mduration=\u001b[37m${
+          Date.now() - now
+        }ms`
+      );
+    } catch {
+      log(
+        `\u001b[31mError Occured \u001b[36mchat=\u001b[37m${chatId} \u001b[36mduration=\u001b[37m${
+          Date.now() - now
+        }ms`
+      );
+    }
   }
 
   async helpHandler(ctx: Context) {

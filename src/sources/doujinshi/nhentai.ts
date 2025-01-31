@@ -1,13 +1,18 @@
-import { bold, FmtString, join, underline } from "telegraf/format";
+import {
+  bold,
+  FmtString,
+  join,
+  underline,
+} from 'telegraf/format';
 
-import { DOMParser } from "@b-fuze/deno-dom";
+import { DOMParser } from '@b-fuze/deno-dom';
 
-import Doujinshi from "../../models/doujinshi.ts";
-import getWrapper from "./getWrapper.ts";
+import Doujinshi from '../../models/doujinshi.ts';
+import getWrapper from './getWrapper.ts';
 
 const BASE_URL = "nhentai.net";
 
-// TODO bypass cloudflare
+// FIXME bypass cloudflare
 // https://github.com/ZFC-Digital/cf-clearance-scraper
 async function get(id: string) {
   const resp = await fetch(`https://${BASE_URL}/g/${id}`);

@@ -44,7 +44,10 @@ class Bot {
     const token = Deno.env.get("BOT_TOKEN");
     if (!token) throw Error("No token found.");
 
-    this.bot = new Telegraf<Context>(token, { handlerTimeout: 1_000_000 });
+    this.bot = new Telegraf<Context>(token, {
+      handlerTimeout: 1_000_000,
+      telegram: { apiRoot: Deno.env.get("API_ROOT") },
+    });
 
     this.bot.use(this.mainHandler.bind(this));
     this.bot.start(this.helpHandler.bind(this));

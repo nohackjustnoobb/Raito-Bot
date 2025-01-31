@@ -4,8 +4,17 @@ WORKDIR /app
 
 COPY . .
 
-RUN deno cache src/main.ts
+RUN deno install --allow-scripts=npm:webtorrent,npm:node-datachannel
+RUN deno cache src/index.ts
 
 EXPOSE 8080
 
-CMD ["run", "--allow-net", "--allow-env", "src/main.ts"]
+CMD ["run", \
+    "--allow-net", \
+    "--allow-env", \
+    "--allow-read", \
+    "--allow-write", \
+    "--allow-ffi", \
+    "--allow-sys", \
+    "--allow-run", \
+    "src/index.ts"]

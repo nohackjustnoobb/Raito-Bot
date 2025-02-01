@@ -5,18 +5,20 @@ import {
   join,
   underline,
 } from 'telegraf/format';
+// @deno-types="npm:@types/webtorrent@^0.110.0"
 import WebTorrent from 'webtorrent';
 
 import Torrent from '../models/torrent.ts';
 import { interleave } from '../utils/utils.ts';
 
 const MAX_DOWNLOAD_TASK = 5;
+const MAX_DOWNLOAD_SIZE = 2e9; // 2GB
 
 interface TorrentCallback {
   onFail: (hash: string) => void;
-  onAdd: () => void;
-  // deno-lint-ignore no-explicit-any
-  onDone: (torrent: any) => void;
+  onAdd: (hash: string) => void;
+  onAddFail: (hash: string) => void;
+  onDone: (torrent: WebTorrent.Torrent) => void;
 }
 
 interface AddRequest {
@@ -33,7 +35,7 @@ class TorrentManager {
   queue: Array<AddRequest> = [];
   currentRequest?: AddRequest;
 
-  client: WebTorrent | null = null;
+  client: WebTorrent.Instance | null = null;
 
   constructor(disabled: boolean = false) {
     if (disabled) return;
@@ -43,13 +45,10 @@ class TorrentManager {
     });
 
     this.client.on("error", () => {
-      if (!this.currentRequest) return;
-
-      this.currentRequest.callback.onFail("");
-    });
-
-    this.client.on("add", () => {
-      this.currentRequest = undefined;
+      if (this.currentRequest) {
+        this.currentRequest.callback.onFail("");
+        this.currentRequest = undefined;
+      }
 
       if (!this.queue.length) return;
       this.currentRequest = this.queue.shift();
@@ -75,8 +74,7 @@ class TorrentManager {
 
     if (!this.downloadList[chatId]) this.downloadList[chatId] = new Set();
 
-    // deno-lint-ignore no-explicit-any
-    const torrent = this.client.torrents.find((v: any) => {
+    const torrent = this.client!.torrents.find((v) => {
       const match = link.match(/urn:btih:([^&]*)/);
       if (!match) return false;
 
@@ -85,7 +83,7 @@ class TorrentManager {
     if (torrent) {
       this.callbacks[torrent.magnetURI][chatId] = callback;
       this.downloadList[chatId].add(torrent.magnetURI);
-      callback.onAdd();
+      callback.onAdd(torrent.infoHash);
 
       return;
     }
@@ -96,13 +94,27 @@ class TorrentManager {
         path: `./download/`,
         destroyStoreOnDestroy: true,
       },
-      // deno-lint-ignore no-explicit-any
-      (torrent: any) => {
-        callback.onAdd();
+      (torrent) => {
+        this.currentRequest = undefined;
+
+        if (this.queue.length) {
+          this.currentRequest = this.queue.shift();
+          this._add();
+        }
+
+        for (const file of torrent.files) {
+          if (file.length > MAX_DOWNLOAD_SIZE) {
+            callback.onAddFail(torrent.infoHash);
+            this.client!.remove(torrent);
+            return;
+          }
+        }
+
+        callback.onAdd(torrent.infoHash);
 
         this.callbacks[torrent.magnetURI] = {};
-
         this.callbacks[torrent.magnetURI][chatId] = callback;
+
         this.downloadList[chatId].add(torrent.magnetURI);
 
         torrent.on("done", () => {
@@ -127,8 +139,7 @@ class TorrentManager {
   }
 
   remove(chatId: string, hash: string) {
-    // deno-lint-ignore no-explicit-any
-    const torrent = this.client.torrents.find((v: any) => v.infoHash === hash);
+    const torrent = this.client!.torrents.find((v) => v.infoHash === hash);
     if (!torrent) return;
     const url = torrent.magnetURI;
 
@@ -136,7 +147,7 @@ class TorrentManager {
 
     if (Object.keys(this.callbacks[url]).length === 0) {
       delete this.callbacks[url];
-      this.client.remove(torrent);
+      this.client!.remove(torrent);
     }
 
     if (this.downloadList[chatId]) this.downloadList[chatId].delete(url);
@@ -146,14 +157,14 @@ class TorrentManager {
     if (!this.downloadList[chatId]) return [];
 
     return [...this.downloadList[chatId]].map((v) => {
-      const torrent = this.client.torrents.find(
-        // deno-lint-ignore no-explicit-any
-        (v2: any) => v2.magnetURI === v
-      );
+      const torrent = this.client!.torrents.find((v2) => v2.magnetURI === v);
 
-      const result = new Torrent(torrent.name ?? "Loading", torrent.magnetURI);
-      result.progress = torrent.progress;
-      result.hash = torrent.infoHash;
+      const result = new Torrent(
+        torrent!.name ?? "Loading",
+        torrent!.magnetURI
+      );
+      result.progress = torrent!.progress;
+      result.hash = torrent!.infoHash;
 
       return result;
     });
@@ -270,7 +281,7 @@ async function handler(ctx: Context, mesg: string) {
 
   if (!link) return;
 
-  await ctx.reply("Trying to add torrent to download list...");
+  await ctx.reply("Trying to add the torrent to the download list...");
   torrentManager.add({
     chatId,
     link,
@@ -283,19 +294,36 @@ async function handler(ctx: Context, mesg: string) {
             ".",
           ])
         ),
-      onAdd: async () =>
+      onAdd: async (hash) =>
         await ctx.reply(
           join([
-            "Added to download list. Use ",
+            "Added ",
+            underline(bold(hash)),
+            " to download list. Use ",
             underline(bold("/torrent list")),
             " or ",
             underline(bold("/t l")),
             " to view the download list.",
           ])
         ),
-      // TODO when done
-      onDone: (torrent) => {
-        console.log(torrent);
+
+      onAddFail: async (hash) =>
+        await ctx.reply(
+          join([
+            "Failed to add ",
+            underline(bold(hash)),
+            " to the download list. The file is too big.",
+          ])
+        ),
+      onDone: async (torrent) => {
+        for (const file of torrent.files) {
+          await ctx.replyWithDocument({
+            source: file.createReadStream(),
+            filename: file.name,
+          });
+        }
+
+        torrentManager.remove(chatId, torrent.infoHash);
       },
     },
   });

@@ -6,6 +6,7 @@
   "nodeModulesDir": "auto",
   "imports": {
     "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom@^0.1.48",
+    "@types/webtorrent": "npm:@types/webtorrent@^0.110.0",
     "marked": "npm:marked@^15.0.6",
     "telegraf": "npm:telegraf@^4.16.3",
     "webtorrent": "npm:webtorrent@^2.5.16"

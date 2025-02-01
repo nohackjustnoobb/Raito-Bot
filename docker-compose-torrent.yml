@@ -9,10 +9,13 @@ services:
       - telegram-bot-api-data:/var/lib/telegram-bot-api
     networks:
       - default
+    restart: unless-stopped
 
   bot:
     build:
       context: .
+    depends_on:
+      - api
     env_file:
       - .env
     environment:

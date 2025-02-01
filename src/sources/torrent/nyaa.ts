@@ -6,6 +6,7 @@ import Torrent from '../../models/torrent.ts';
 import getWrapper from './getWrapper.ts';
 
 const BASE_URL = "nyaa.si";
+const FETCH_TIMEOUT = 5000;
 
 async function parseTextFromMarkDown(mdString: string) {
   const htmlString = await marked(mdString);
@@ -15,7 +16,9 @@ async function parseTextFromMarkDown(mdString: string) {
 }
 
 async function get(id: string, baseUrl: string): Promise<Torrent> {
-  const resp = await fetch(`https://${baseUrl}/view/${id}`);
+  const resp = await fetch(`https://${baseUrl}/view/${id}`, {
+    signal: AbortSignal.timeout(FETCH_TIMEOUT),
+  });
   if (!resp.ok) throw new Error("Failed to Fetch the torrent.");
 
   const doc = new DOMParser().parseFromString(await resp.text(), "text/html");

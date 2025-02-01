@@ -10,6 +10,7 @@
     "jsr:@std/path@0.213.1": "0.213.1",
     "jsr:@std/path@~0.213.1": "0.213.1",
     "npm:@types/node@*": "22.5.4",
+    "npm:@types/webtorrent@0.110": "0.110.0",
     "npm:marked@^15.0.6": "15.0.6",
     "npm:telegraf@^4.16.3": "4.16.3",
     "npm:webtorrent@^2.5.16": "2.5.16"
@@ -94,10 +95,51 @@
         "uint8-util"
       ]
     },
+    "@types/bittorrent-protocol@3.1.6": {
+      "integrity": "sha512-hqiRctJX9t9kknr6nn0q7UlcWHKvw2gSnPc/4jxt7Q/T0RP9txNv27Djue9ZjCNlAJ+irqAnCxtb+TcSpMyhtA==",
+      "dependencies": [
+        "@types/node"
+      ]
+    },
+    "@types/magnet-uri@5.1.5": {
+      "integrity": "sha512-SbBjlb1KGe38VfjRR+mwqztJd/4skhdKkRbIzPDhTy7IAeEAPZWIVSEkZw00Qr4ZZOGR3/ATJ20WWPBfrKHGdA==",
+      "dependencies": [
+        "@types/node"
+      ]
+    },
     "@types/node@22.5.4": {
       "integrity": "sha512-FDuKUJQm/ju9fT/SeX/6+gBzoPzlVCzfzmGkwKvRHQVxi4BntVbyIwf6a4Xn62mrvndLiml6z/UBXIdEVjQLXg==",
       "dependencies": [
         "undici-types"
+      ]
+    },
+    "@types/parse-torrent-file@4.0.6": {
+      "integrity": "sha512-SxqVth0Iv0WuEkqWS5MaY4S4Tlyi+QHkElQREvsUPw2xHcPgKyQ2dkJRRv5vAxmLzH+tnMdOj1Nws/wsenbzUw==",
+      "dependencies": [
+        "@types/node"
+      ]
+    },
+    "@types/parse-torrent@5.8.7": {
+      "integrity": "sha512-vZtYe450hO+KL7B5fejM8CHWg1LPZKeVXlolphPsWf6n4H0ZUlI6ICbqHoaFmH7JQmU2yRbGgyvqqizdFuGPFQ==",
+      "dependencies": [
+        "@types/magnet-uri",
+        "@types/node",
+        "@types/parse-torrent-file"
+      ]
+    },
+    "@types/simple-peer@9.11.8": {
+      "integrity": "sha512-rvqefdp2rvIA6wiomMgKWd2UZNPe6LM2EV5AuY3CPQJF+8TbdrL5TjYdMf0VAjGczzlkH4l1NjDkihwbj3Xodw==",
+      "dependencies": [
+        "@types/node"
+      ]
+    },
+    "@types/webtorrent@0.110.0": {
+      "integrity": "sha512-f2Moh9KWdHqYT1N5hxbaCw213SyYyyHhxOoxJI4c53nwAiq4JCytpySV8cM5FC9oPOE7Y/4nPYbnreJNl9lJRA==",
+      "dependencies": [
+        "@types/bittorrent-protocol",
+        "@types/node",
+        "@types/parse-torrent",
+        "@types/simple-peer"
       ]
     },
     "@webtorrent/http-node@1.3.0": {
@@ -1117,6 +1159,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@b-fuze/deno-dom@~0.1.48",
+      "npm:@types/webtorrent@0.110",
       "npm:marked@^15.0.6",
       "npm:telegraf@^4.16.3",
       "npm:webtorrent@^2.5.16"

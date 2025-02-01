@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   app:
+    container_name: raito-bot
     build:
       context: .
     env_file:

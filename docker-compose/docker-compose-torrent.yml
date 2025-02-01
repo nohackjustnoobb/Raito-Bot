@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   api:
+    container_name: telegram-bot-api
     image: aiogram/telegram-bot-api:latest
     env_file:
       - ../.env
@@ -12,6 +13,7 @@ services:
     restart: unless-stopped
 
   bot:
+    container_name: raito-bot
     build:
       context: ..
     depends_on:

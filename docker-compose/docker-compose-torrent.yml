@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  api:
+    image: aiogram/telegram-bot-api:latest
+    env_file:
+      - ../.env
+    volumes:
+      - telegram-bot-api-data:/var/lib/telegram-bot-api
+    networks:
+      - default
+    restart: unless-stopped
+
+  bot:
+    build:
+      context: ..
+    depends_on:
+      - api
+    env_file:
+      - ../.env
+    environment:
+      - API_ROOT=http://api:8081
+    networks:
+      - default
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+
+volumes:
+  telegram-bot-api-data:
+
+
+networks:
+  default:
+    driver: bridge

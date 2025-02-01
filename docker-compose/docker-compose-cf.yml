@@ -2,33 +2,25 @@ version: "3.9"
 
 services:
   api:
-    image: aiogram/telegram-bot-api:latest
-    env_file:
-      - .env
-    volumes:
-      - telegram-bot-api-data:/var/lib/telegram-bot-api
+    image: zfcsoftware/cf-clearance-scraper:latest
     networks:
       - default
     restart: unless-stopped
 
   bot:
     build:
-      context: .
+      context: ..
     depends_on:
       - api
     env_file:
-      - .env
+      - ../.env
     environment:
-      - API_ROOT=http://api:8081
+      - CF_CLEARANCE_URL=http://api:3000/cf-clearance-scraper
     networks:
       - default
     ports:
       - 8080:8080
     restart: unless-stopped
-
-volumes:
-  telegram-bot-api-data:
-
 
 networks:
   default:

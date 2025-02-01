@@ -11,14 +11,40 @@ import Doujinshi from '../../models/doujinshi.ts';
 import getWrapper from './getWrapper.ts';
 
 const BASE_URL = "nhentai.net";
+const CF_CLEARANCE_URL = Deno.env.get("CF_CLEARANCE_URL");
 
-// FIXME bypass cloudflare
-// https://github.com/ZFC-Digital/cf-clearance-scraper
 async function get(id: string) {
-  const resp = await fetch(`https://${BASE_URL}/g/${id}`);
-  if (!resp.ok) throw new Error("Failed to Fetch the Doujinshi.");
+  const url = `https://${BASE_URL}/g/${id}`;
+  const resp = await fetch(url);
 
-  const doc = new DOMParser().parseFromString(await resp.text(), "text/html");
+  let text: string | undefined;
+
+  if (resp.ok) {
+    text = await resp.text();
+  } else {
+    if (resp.status === 403 && CF_CLEARANCE_URL) {
+      const cfReso = await fetch(CF_CLEARANCE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: url,
+          mode: "source",
+        }),
+      });
+
+      if (cfReso.ok) {
+        const json = await cfReso.json();
+
+        if (json.code === 200) text = json.source;
+      }
+    }
+  }
+
+  if (!text) throw new Error("Failed to Fetch the Doujinshi.");
+
+  const doc = new DOMParser().parseFromString(text, "text/html");
 
   const doujinshi = new Doujinshi();
 

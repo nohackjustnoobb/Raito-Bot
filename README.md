@@ -20,7 +20,6 @@ Inside the project directory, create a .env file with the following content:
 ```bash
 BOT_TOKEN=<your-bot-token>
 SOURCE=<your-repo-url> # Optional
-DOMAIN=<your-domain> # Optional
 ```
 
 3. Run the Bot with Docker Compose
@@ -76,7 +75,7 @@ docker-compose -f docker-compose/docker-compose-torrent.yml up -d
 
 ## Bypass Cloudflare Protection
 
-Depending on whether you have a (cf-clearance-scraper)[https://github.com/ZFC-Digital/cf-clearance-scraper] server, follow the appropriate steps:
+Depending on whether you have a [cf-clearance-scraper](https://github.com/ZFC-Digital/cf-clearance-scraper) server, follow the appropriate steps:
 
 ### If You Have a cf-clearance-scraper Server
 

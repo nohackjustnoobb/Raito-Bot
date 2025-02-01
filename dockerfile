@@ -7,8 +7,6 @@ COPY . .
 RUN deno install --allow-scripts=npm:webtorrent,npm:node-datachannel
 RUN deno cache src/index.ts
 
-EXPOSE 8080
-
 CMD ["run", \
     "--allow-net", \
     "--allow-env", \

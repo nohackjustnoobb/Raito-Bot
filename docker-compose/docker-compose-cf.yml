@@ -18,8 +18,6 @@ services:
       - CF_CLEARANCE_URL=http://api:3000/cf-clearance-scraper
     networks:
       - default
-    ports:
-      - 8080:8080
     restart: unless-stopped
 
 networks:

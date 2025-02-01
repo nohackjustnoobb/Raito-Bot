@@ -22,8 +22,6 @@ services:
       - API_ROOT=http://api:8081
     networks:
       - default
-    ports:
-      - 8080:8080
     restart: unless-stopped
 
 volumes:

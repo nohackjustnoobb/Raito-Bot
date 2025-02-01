@@ -1,13 +1,6 @@
-import {
-  Context,
-  Telegraf,
-} from 'telegraf';
+import { Context, Telegraf } from "telegraf";
 
-import {
-  getArgs,
-  log,
-  sleep,
-} from '../utils/utils.ts';
+import { getArgs, log, sleep } from "../utils/utils.ts";
 
 // 6 hours
 const STATE_TIMEOUT = 21600;
@@ -190,8 +183,6 @@ class Bot {
   }
 
   async start() {
-    const domain = Deno.env.get("DOMAIN");
-
     const convertedCmds = this.cmds.map((v) => ({
       command: v.name,
       description: v.description,
@@ -204,14 +195,8 @@ class Bot {
     }
     this.stateCleaner();
 
-    if (domain) {
-      log("\u001b[34mBot Listening on Port \u001b[36m8080\u001b[34m...");
-
-      this.bot.launch({ webhook: { domain: domain, port: 8080 } });
-    } else {
-      log("\u001b[34mBot Listening \u001b[36m(Dev Mode)\u001b[34m...");
-      this.bot.launch();
-    }
+    log("\u001b[34mBot Listening \u001b[36m(Dev Mode)\u001b[34m...");
+    this.bot.launch();
   }
 }
 

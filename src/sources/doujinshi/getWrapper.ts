@@ -1,18 +1,8 @@
-import {
-  Context,
-  TelegramError,
-} from 'telegraf';
-import {
-  bold,
-  join,
-} from 'telegraf/format';
+import { Context, TelegramError } from "telegraf";
+import { bold, join } from "telegraf/format";
 
-import Doujinshi from '../../models/doujinshi.ts';
-import {
-  chunkArray,
-  interleave,
-  sleep,
-} from '../../utils/utils.ts';
+import Doujinshi from "../../models/doujinshi.ts";
+import { chunkArray, interleave, log, sleep } from "../../utils/utils.ts";
 
 const CHUNK_SIZE = 10;
 const TIMEOUT = 1000;
@@ -84,25 +74,35 @@ function getWrapper(
 
       for (const urls of chunkArray(doujinshi.urls, CHUNK_SIZE)) {
         await sleep(TIMEOUT);
-        try {
-          await ctx.replyWithMediaGroup(
-            urls.map((v) => ({
-              type: "photo",
-              media: v,
-              has_spoiler: true,
-            })),
-            { disable_notification: true }
-          );
-        } catch (err) {
-          if (!(err instanceof TelegramError)) throw err;
 
-          const match = err.response.description.match(
-            /Too Many Requests: retry after (\d*)/
-          );
+        let retry = 0;
+        while (retry < 5) {
+          try {
+            await ctx.replyWithMediaGroup(
+              urls.map((v) => ({
+                type: "photo",
+                media: v,
+                has_spoiler: true,
+              })),
+              { disable_notification: true }
+            );
 
-          if (err.response.error_code == 429 && match) {
-            console.log("waiting for ", match[1], "s");
-            await sleep(parseInt(match[1]) * 1000);
+            break;
+          } catch (err) {
+            retry++;
+
+            if (!(err instanceof TelegramError)) throw err;
+
+            const match = err.response.description.match(
+              /Too Many Requests: retry after (\d*)/
+            );
+
+            if (err.response.error_code == 429 && match) {
+              log(
+                `\u001b[31Rate limited. Retrying after ${match[1]} seconds...`
+              );
+              await sleep(parseInt(match[1]) * 1000);
+            }
           }
         }
       }
